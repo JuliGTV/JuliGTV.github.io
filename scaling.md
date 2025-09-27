@@ -1,6 +1,6 @@
 layout: page
 title: "Inference Time Scaling Algorithm"
-permalink: /writeups/scaling
+permalink: /writeups/scaling/
 
 
 This write up presents a naive inference time algorithm for using LLMs to answer hard optimisation problems. The algorithm achieves a SOTA score on the *26 circle packing problem* (one of the problems used to prove the merits of AlphaEvolve).
