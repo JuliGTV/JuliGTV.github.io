@@ -4,15 +4,12 @@ title: "Inference Time Scaling Algorithm"
 permalink: /writeups/scaling/
 ---
 
-# rEVOLVE
-
-### A simple inference time scaling algorithm with SOTA results
 
 This write up presents a naive inference time algorithm for using LLMs to answer hard optimisation problems. The algorithm achieves a SOTA score on the *26 circle packing problem* (one of the problems used to prove the merits of AlphaEvolve).
 
 
 
-
+Github repo: https://github.com/JuliGTV/rEVOLVE
 
 
 
@@ -64,6 +61,84 @@ I then constructed a hybrid strategy which consisted of picking one of these thr
 For 2.2 I simply used added the code and score of the previous solution to a prompt with a description of the problem, and instructions to improve the given solution. (more sophisticated approaches may show the full evolutionary history of solutions or show multiple performant solutions for combination).
 
 
+Pseudocode:
+
+```
+Inputs:
+  problem_spec, start_code
+  scorer(code) -> numeric score   # fast, deterministic
+  LLM(prompt) -> code
+  p_elite, p_uniform in [0,1], with p_elite + p_uniform ≤ 1
+  gamma ≥ 0, ε > 0
+  K  # number of iterations/evals
+
+Init:
+  s0 = scorer(start_code)
+  P  = [(start_code, s0)]
+  best = (start_code, s0)
+
+Loop (t = 1..K):
+  # selection
+  u = rand()
+  if u < p_elite:
+      parent = argmax(P, key=score)
+  elif u < p_elite + p_uniform:
+      parent = uniform_choice(P)
+  else:
+      weights = [max(ε, s)^gamma for (_, s) in P]
+      parent = weighted_choice(P, weights)
+
+  # improvement
+  prompt = f"""
+  Problem:
+  {problem_spec}
+
+  Current solution (score={parent.score}):
+  {parent.code}
+
+  Improve it. Keep determinism and runtime constraints.
+  Output code only.
+  """
+  child_code  = LLM(prompt)
+  child_score = scorer(child_code)
+
+  P.append((child_code, child_score))
+  if child_score > best.score:
+      best = (child_code, child_score)
+
+Return:
+  best.code, best.score, P
+
+```
+
+
+
+## Results
+
+#### Scaling is all you need
+
+After exploring various permutations of model choice, prompt, and hyperparameters without much success, I noticed two things:
+1. More powerful models (e.g. `gpt4.1`) and reasoning models were not substantially better than lesser ones especially factoring for time and cost, although the weakest models (e.g. `gpt4.1-nano`) could not make progress at all.
+2. While the rate of progress would rapidly diminish, new best solutions were still appearing near the ends of my runs (doing 100s of generations).
+
+On this basis I decided to find the cheapest model that could still make progress, and then substantially scale up the size of my runs. I found that 
+
+
+
+
+| Algorithm                                                                                                                         | Creator                  | Date                    | Score              |
+| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------- | ------------------ |
+| [rEVOLVE](https://github.com/JuliGTV/rEVOLVE)                                                                                     | Me                       | 2025-06-22              | 2.6359828880000005 |
+| [ShinkaEvolve](https://sakana.ai/shinka-evolve/)                                                                                  | Sakana                   | 2025-09-25              | 2.6359828390115476 |
+| [OpenEvolve](https://github.com/codelion/openevolve/issues/156)                                                                   | Yiping Wang / OpenEvolve | 2025-05- (blog publish) | 2.635977           |
+| [FICO Xpress Solver](https://www.fico.com/blogs/best-global-optimization-solver)                                                  | FICO                     | 2025-06-13              | 2.63591551         |
+| [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/) | DeepMind                 | 2025-05-14              | 2.6358627564136983 |
+| Pre-AlphaEvolve SOTA (baseline cited in paper & notebook)                                                                         | —                        | ≤2025-05-14             | 2.634              |
+
+
+
+
+#### A note on numerical accuracy
 
 
 
@@ -73,10 +148,7 @@ For 2.2 I simply used added the code and score of the previous solution to a pro
 
 
 
-
-
-
-
+- [ ] finish this writeup 📅 2025-09-28 
 
 
 
