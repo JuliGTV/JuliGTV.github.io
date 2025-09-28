@@ -4,6 +4,10 @@ title: "Inference Time Scaling Algorithm"
 permalink: /writeups/scaling/
 ---
 
+# rEVOLVE
+
+### A simple inference time scaling algorithm with SOTA results
+
 
 This write up presents a naive inference time algorithm for using LLMs to answer hard optimisation problems. The algorithm achieves a SOTA score on the *26 circle packing problem* (one of the problems used to prove the merits of AlphaEvolve).
 
@@ -115,31 +119,40 @@ Return:
 
 ## Results
 
+This section covers the results I achieved with the algorithm described above. In particular I focus on the 26 circle packing problem, which asks the algorithm to pack 26 circles into a unit square optimally such as to maximise the sum of their radii, by writing a python function that will itself output the circles' centres and radii.
+
+I chose this problem primarily because it was simply one of the most intelligible of the problems that AlphaEvolve had beaten the SOTA for. Others such as "Third autocorrelation inequality" are far more mathematically involved, and unlike the AlphaEvolve team I don't have Terrence Tao advising me on how to formulate my prompts!
+
+
+
 #### Scaling is all you need
 
 After exploring various permutations of model choice, prompt, and hyperparameters without much success, I noticed two things:
 1. More powerful models (e.g. `gpt4.1`) and reasoning models were not substantially better than lesser ones especially factoring for time and cost, although the weakest models (e.g. `gpt4.1-nano`) could not make progress at all.
 2. While the rate of progress would rapidly diminish, new best solutions were still appearing near the ends of my runs (doing 100s of generations).
 
-On this basis I decided to find the cheapest model that could still make progress, and then substantially scale up the size of my runs. I found that 
+On this basis I decided to find the cheapest model that could still make progress, and then substantially scale up the size of my runs. I found that `Deepseek-V3` offered the best value at only $0.07/M input tokens and $1.10/M output tokens (and half price during Chinese off hours).
+
+I modified my code to generate multiple new solutions in parallel and then launched a new run with 10,000 solutions generated. This run not only beat AlphaEvolve's score on the problem, but also beat the new SOTA that had since been set by FICO Xpress Solver (see table below) and as far as I can tell remains the state of the art to this day.
 
 
-
-
-| Algorithm                                                                                                                         | Creator                  | Date                    | Score              |
-| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------- | ------------------ |
-| [rEVOLVE](https://github.com/JuliGTV/rEVOLVE)                                                                                     | Me                       | 2025-06-22              | 2.6359828880000005 |
-| [ShinkaEvolve](https://sakana.ai/shinka-evolve/)                                                                                  | Sakana                   | 2025-09-25              | 2.6359828390115476 |
-| [OpenEvolve](https://github.com/codelion/openevolve/issues/156)                                                                   | Yiping Wang / OpenEvolve | 2025-05- (blog publish) | 2.635977           |
-| [FICO Xpress Solver](https://www.fico.com/blogs/best-global-optimization-solver)                                                  | FICO                     | 2025-06-13              | 2.63591551         |
-| [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/) | DeepMind                 | 2025-05-14              | 2.6358627564136983 |
-| Pre-AlphaEvolve SOTA (baseline cited in paper & notebook)                                                                         | —                        | ≤2025-05-14             | 2.634              |
+| Algorithm                                                                                                                         | Creator                  | Date        | Score              |
+| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ----------- | ------------------ |
+| [rEVOLVE](https://github.com/JuliGTV/rEVOLVE)                                                                                     | Me                       | 2025-06-22  | 2.6359828880000005 |
+| [ShinkaEvolve](https://sakana.ai/shinka-evolve/)                                                                                  | Sakana                   | 2025-09-25  | 2.6359828390115476 |
+| [OpenEvolve](https://github.com/codelion/openevolve/issues/156)                                                                   | Yiping Wang / OpenEvolve | 2025-07-21  | 2.635977           |
+| [FICO Xpress Solver](https://www.fico.com/blogs/best-global-optimization-solver)                                                  | FICO                     | 2025-06-13  | 2.63591551         |
+| [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/) | DeepMind                 | 2025-05-14  | 2.6358627564136983 |
+| Pre-AlphaEvolve SOTA (baseline cited in paper & notebook)                                                                         | —                        | ≤2025-05-14 | 2.634              |
 
 
 
 
 #### A note on numerical accuracy
 
+The scorer I used to score circle packings was the implementation from the Openevolve library. This scorer allows for $1 \times 10^{-6}$ of numerical slack, so the solution created by rEVOLVE had circles that very slightly overlapped. To address this it sufficed to subtract $7 \times 10^{-9}$ from each radius diminishing the score from $2.6359830853311843$ to the reported $2.6359828880000005$.
+
+Sakana mention in their paper also doing something similar reducing their score from $2.635983099011548$ to $2. 6359828390115476$. It may be that some of the other implementations in the table (especially the OpenEvolve one itself) still use the slacker criteria.
 
 
 
