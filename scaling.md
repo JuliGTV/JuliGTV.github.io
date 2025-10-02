@@ -264,6 +264,8 @@ def run_packing():
 
 The optimal circle packing produced by the program above is:
 
+![Circle Packing](/assets/images/circle_packing_fig.png)
+
 
 ```
 # x, y, radius
