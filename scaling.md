@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: default
 title: "Inference Time Scaling Algorithm"
 permalink: /writeups/scaling/
 ---
