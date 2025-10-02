@@ -4,9 +4,11 @@ title: "Inference Time Scaling Algorithm"
 permalink: /writeups/scaling/
 ---
 
+
 # rEVOLVE
 
 ### A simple inference time scaling algorithm with SOTA results
+
 
 
 This write up presents a naive inference time algorithm for using LLMs to answer hard optimisation problems. The algorithm achieves a SOTA score on the *26 circle packing problem* (one of the problems used to prove the merits of AlphaEvolve).
@@ -19,7 +21,7 @@ Github repo: https://github.com/JuliGTV/rEVOLVE
 
 
 >[!info] Note on dates
->I am writing this on 2025-09-27 but the work was done in June. The SOTA score was achieved on 2025-06-22. While I am not sure I can prove that date, I believe the Github Verified commit with hash `f325d9d210c65e810c471e7c7b12edc062422e34` proves that it was done before 11th July.
+>I am writing this on 2025-09-27 but the work was done in June. The SOTA score was achieved on 2024-06-22. While I am not sure I can prove that date, I believe the Github Verified commit with hash `f325d9d210c65e810c471e7c7b12edc062422e34` proves that it was done before 11th July.
 >(If not you will have to take my word for it since it's not very important!)
 
 
@@ -128,7 +130,7 @@ I chose this problem primarily because it was simply one of the most intelligibl
 #### Scaling is all you need
 
 After exploring various permutations of model choice, prompt, and hyperparameters without much success, I noticed two things:
-1. More powerful models (e.g. `gpt4.1`) and reasoning models were not substantially better than lesser ones especially factoring for time and cost, although the weakest models (e.g. `gpt4.1-nano`) could not make progress at all.
+1. More powerful models (e.g. `gpt-4.1`) and reasoning models were not substantially better than lesser ones especially factoring for time and cost, although the weakest models (e.g. `gpt-4o-mini`) could not make progress at all.
 2. While the rate of progress would rapidly diminish, new best solutions were still appearing near the ends of my runs (doing 100s of generations).
 
 On this basis I decided to find the cheapest model that could still make progress, and then substantially scale up the size of my runs. I found that `Deepseek-V3` offered the best value at only $0.07/M input tokens and $1.10/M output tokens (and half price during Chinese off hours).
@@ -155,16 +157,18 @@ The scorer I used to score circle packings was the implementation from the Opene
 Sakana mention in their paper also doing something similar reducing their score from $2.635983099011548$ to $2. 6359828390115476$. It may be that some of the other implementations in the table (especially the OpenEvolve one itself) still use the slacker criteria.
 
 
+#### Limitations
+
+- I struggled to generalise this result to other problems. I suspect a lot of this is just a question of prompt engineering, and iteration (so I was bottlenecked by compute budget and mathematical expertise)
+- ShinkaEvolve's score (which is equal to mine up to ) was achieved with 150 LLM generations compared to my 10,000. Considering the scores themselves are virtually identical I think it would be fairer to call them the SOTA.
+
+## Conclusion
+
+This style of black box inference time scaling offers a powerful paradigm for using LLMs to make progress on genuinely hard problems. For such a naive implementation to achieve such a remarkable result is sign that there is likely much more yet to come from this area of research. 
 
 
 
 
 
 
-- [ ] finish this writeup 📅 2025-09-28 
 
-
-
-
-
-2025-06-22_00-13-25_circle_pac
